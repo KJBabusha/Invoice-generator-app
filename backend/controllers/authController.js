@@ -50,6 +50,23 @@ exports.loginUser = async (req, res) => {
     const {email, password} = req.body;
 
     try {
+        const user = await User.findOne({email}).select("+password");
+
+        if(user&& (await user.matchPassword(password))){
+            res.status(200).json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                token: generateToken (user._id),
+
+                businessName: user.businessName || '',
+                businessAddress: user.businessAddress || '',
+                phoneNumber: user.phoneNumber || '',
+            });
+        }else{
+            res.status(401).json({message: "Invalid cridentials"
+            });
+        }
         
     } catch (error) {
         res.status(500).json({message:"Server Error"});
@@ -62,6 +79,15 @@ exports.loginUser = async (req, res) => {
 exports.getMe = async (req,res) =>{
 
     try {
+        const user = await User.findById(req.user.id);
+        res.status(200).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            businessName: user.businessName || '',
+            businessAddress: user.businessAddress || '',
+            phoneNumber: user.phoneNumber || '',
+        });
         
     } catch (error) {
         res.status(500).json({message:"Server Error"});
@@ -74,7 +100,28 @@ exports.getMe = async (req,res) =>{
 exports.updateUserProfile = async (req, res) => {
 
     try { 
-        
+        const user = await User.findById(req.user.id);
+
+        if(user){
+            user.name = req.body.name || user.name;
+            user.email = req.body.email || user.email;
+            user.businessName = req.body.businessName || user.businessName;
+            user.businessAddress = req.body.businessAddress || user.businessAddress;
+            user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
+
+            const updatedUser = await user.save();
+
+            res.status(200).json({
+                _id: updatedUser._id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                businessName: updatedUser.businessName || '',
+                businessAddress: updatedUser.businessAddress || '',
+                phoneNumber: updatedUser.phoneNumber || '',
+            });
+        } else {
+            res.status(404).json({message: "User not found"});
+        }
     } catch (error) {
         res.status(500).json({message:"Server Error"});
     }
