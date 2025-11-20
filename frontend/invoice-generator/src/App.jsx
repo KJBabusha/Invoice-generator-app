@@ -25,7 +25,7 @@ const App = () => {
           {/* Public React */}
           <Route path="/" element={<LandingPage/>}/>
           <Route path="/signup" element={<SignUp/>}/>
-          <Route path="/login" element={<Login />}/>
+          <Route path="/login" element={<Login/>}/>
 
           {/* Procted Routes  */}
           <Route path= "/" element={<ProtectedRoute/>}>

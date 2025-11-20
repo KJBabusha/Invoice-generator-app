@@ -1,9 +1,9 @@
 import axios from 'axios';
-import { BASE_URL } from './apiPaths';
+import { BASE_URL} from './apiPaths';
 
 const axiosInstance = axios.create({
     baseURL: BASE_URL,
-    timeout: 8000, // 8 seconds timeout
+    timeout: 80000, // 8 seconds timeout
     headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
@@ -13,7 +13,7 @@ const axiosInstance = axios.create({
 // Resquest Interceptor to add auth token
 axiosInstance.interceptors.request.use(
     (config) => {
-        const accessToken = localStorage.getItem('authToken');
+        const accessToken = localStorage.getItem("token");
         if (accessToken) {
             config.headers.Authorization = `Bearer ${accessToken}`;
         }
