@@ -13,7 +13,7 @@ import{API_PATHS} from '../../utils/apiPaths';
  import { useAuth } from '../../context/AuthContext';
  import {useNavigate} from 'react-router-dom';
  import { validateEmail, validatePassword, } from '../../utils/helper';
-import axiosInstance from '../../utils/axiosinstance';
+import axiosInstance from '../../utils/axiosInstance';
 const SignUp = () => {
 
   const {login} = useAuth();
@@ -45,17 +45,171 @@ const SignUp = () => {
   });
 
   //validation function
-  const validateName = (name) => {};
+  const validateName = (name) => {
+    if(!name) return "Name is Required";
+    if(name.legnth <2) return "Name must be at least 2 characters";
+    if(name.legnth>50) return "Name must be less than 50 Characters";
+    return ""; 
+  };
 
-  const validateConfirmPassword = (confirmPassword, password)=>{};
+  const validateConfirmPassword = (confirmPassword, password)=>{
+    if(!confirmPassword) return "Please confirm your Password";
+    if(confirmPassword !== password) return "Passwaords do not match";
+    return "";
+  };
 
-  const handleInputChange = (e) =>{};
+  const handleInputChange = (e) =>{
+    const {name,value} = e.target;
+    setFormData((prev) =>({
+      ...prev,
+      [name]:value,
+    }));
 
-  const handleBlur = (e) =>{};
+    //real-time validation
+    if(touched[name]){
+      const newFieldErrors = {...fieldErrors};
+      if (name=== "name"){
+        newFieldErrors.name = validateName(value);
+      }else if (name=== "email"){
+        newFieldErrors.email = validateEmail(value);
+      }else if (name==="password"){
+        newFieldErrors.password = validatePassword(value);
+        //Also revalidate confirm passsword of it's been touch
+        if (touched.confirmPassword){
+          newFieldErrors.confirmPassword= validateConfirmPassword(
+            formData.confirmPassword,
+            value
+          );
+        }
+      }else if (name=== "confirmPassword"){
+        newFieldErrors.confirmPassword= validateConfirmPassword(
+          value,
+          formData.password
+        );
+      }
+      setFieldErrors(newFieldErrors);
 
-  const isFormValid = () =>{};
+    }
+    if (error) setError("");
+  };
 
-  const handleSubmit = async ()=>{};
+  const handleBlur = (e) =>{
+    const{name} = e.target;
+    setTouched((prev)=> ({
+      ...prev,
+      [name]: true,
+    }));
+
+    //validate on blur
+    const newFieldErrors = {...fieldErrors};
+    if(name=== "name"){
+      newFieldErrors.name = validateName(formData.name);
+    }else if (name==="email"){
+      newFieldErrors.email = validateEmail(formData.email);
+    }else if (name=== "password"){
+      newFieldErrors.password = validatePassword(formData.password);
+    }else if(name==="confirmPassword"){
+      newFieldErrors.confirmPassword = validateConfirmPassword(
+        formData.confirmPassword,
+        formData.password
+      );
+    }
+    setFieldErrors(newFieldErrors);
+  };
+
+  const isFormValid = () =>{
+    const nameError = validateName(formData.name);
+    const emailError = validateEmail(formData.email);
+    const passwordError = validatePassword(formData.password);
+    const confirmPasswordError = validateConfirmPassword(
+      formData.confirmPassword, 
+      formData.password 
+    );
+    return (
+      !nameError&&
+      !emailError&&
+      !passwordError&&
+      !confirmPasswordError&&
+      formData.name&&
+      formData.email&&
+      formData.password&&
+      formData.confirmPassword
+    );
+
+  };
+
+  const handleSubmit = async ()=>{
+    //Validate all fields before submission
+    const nameError = validateName(formData.name);
+    const emailError = validateEmail(formData.email);
+    const passwordError = validatePassword(formData.password);
+    const confirmPasswordError = validateConfirmPassword(
+      formData.confirmPassword,
+      formData.password
+    );
+    if(nameError || emailError || passwordError || confirmPasswordError){
+      setFieldErrors({
+        name:nameError,
+        email:emailError,
+        password:passwordError,
+        confirmPassword:confirmPasswordError,
+      });
+      setTouched({
+        name:true,
+        email:true,
+        password:true,
+        confirmPassword:true
+      });
+      return ;
+    }
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await axiosInstance.post(
+        API_PATHS.AUTH.REGISTER,
+        {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }
+      );
+      const data = response.data;
+      const{token, user} = data;
+      
+      if (response.status=== 201){
+        setSuccess("Account created Successful");
+
+        //Reset form
+        setFormData({
+          name:"",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+        setTouched({
+          name:false,
+          email:false,
+          password:false,
+          confirmPassword:false,
+        });
+
+        //Login the user immediately after successful registration
+        login(user,token);
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      if(err.response && err.response.data && err.response.data.message){
+        setError(err.response.data.message);
+      }else {
+        setError("Registration failed.Please try again.");
+      }
+      //console.error("API errror", err.response || err);
+    }finally{
+      setIsLoading(false)
+    }
+  };
 
   return (
     <div className='min-h-screen bg-white flex items-center justify-center px-4 py-8'>
@@ -173,7 +327,7 @@ const SignUp = () => {
             <div className="relative">
               <Lock className='absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5'/>
               <input
-              name="ConfirmPassword"
+              name="confirmPassword"
               type={showConfirmPassword ? "text": "password"}
               required
               value={formData.confirmPassword}

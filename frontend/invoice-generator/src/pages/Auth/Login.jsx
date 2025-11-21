@@ -13,7 +13,7 @@ import{API_PATHS} from '../../utils/apiPaths';
  import { useAuth } from '../../context/AuthContext';
  import {useNavigate} from 'react-router-dom';
  import { validateEmail, validatePassword, } from '../../utils/helper';
-import axiosInstance from '../../utils/axiosinstance';
+import axiosInstance from '../../utils/axiosInstance';
 
 const Login = () => {
 
@@ -60,7 +60,7 @@ const Login = () => {
     if (name === "email") {
       newFieldErrors.email = validateEmail(formData.email);
     }else if (name === "password") {
-      newFieldErrors.password = validatePassword
+      newFieldErrors.password = validatePassword(formData.password);
     }
     setFieldErrors(newFieldErrors); 
   };
@@ -95,7 +95,7 @@ const Login = () => {
     try {
       const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, formData);
 
-      if(response.status === 2000){
+      if(response.status === 200){
         const {token} = response.data;
 
         if (token){
@@ -111,11 +111,34 @@ const Login = () => {
         setError(response.data.message || "Invalid Credentials")
       }
     } catch (err) {
-      if(err.response && err.response.data && err.response.data.message){
-        setError(err.response.data.message);
-      }else{
-        setError("An error occurred during login.")
+      // if(err.response && err.response.data && err.response.data.message){
+      //   setError(err.response.data.message);
+      // }else{
+      //   setError("An error occurred during login.")
+      // }
+
+      // normalize and show whatever the server returned
+      const status = err?.response?.status ?? err?.status ?? 'Network';
+      const serverMessage =
+        err?.response?.data?.message ??
+        err?.response?.data ??
+        err?.message ??
+        'An unknown error occurred';
+
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Login error:', { status, serverMessage, err });
       }
+
+      // prefer server message, fallback to generic with status
+      setError(
+        typeof serverMessage === 'string'
+          ? serverMessage
+          : `Request failed (${status})`
+      );
+
+
+
     }finally{
       setIsLoading(false)
     }
@@ -184,7 +207,7 @@ const Login = () => {
           </div>
 
           {fieldErrors.password && touched.password && (
-            <p className='mt-1 text-sm text-red-600'>{fieldError.password}</p>
+            <p className='mt-1 text-sm text-red-600'>{fieldErrors.password}</p>
           )}
           {/* Error/Sucess Message */}
           {error && (<div className='p3 bg-red-50 border border-red-200 rounded-lg'>

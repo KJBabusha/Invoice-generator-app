@@ -57,11 +57,11 @@ exports.loginUser = async (req, res) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
-                token: generateToken (user._id),
+                token: generateToken(user._id),
 
                 businessName: user.businessName || '',
-                businessAddress: user.businessAddress || '',
-                phoneNumber: user.phoneNumber || '',
+                businessAddress: user.address || '',
+                phoneNumber: user.phone || '',
             });
         }else{
             res.status(401).json({message: "Invalid cridentials"

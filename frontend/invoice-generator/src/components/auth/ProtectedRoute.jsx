@@ -1,10 +1,12 @@
 import { Navigate, Outlet } from "react-router-dom";
 import DashboardLayout from "../layout/DashboardLayout";
+import { useAuth } from "../../context/AuthContext";
   
   const ProtectedRoute = ({children}) => {
     // will intergate these values later
-    const isAuthenticated = true
-    const loading = false
+    const {isAuthenticated, loading} = useAuth();
+    // const isAuthenticated = true
+    // const loading = false
 
     if(loading){
         //You Can render a loading spinner here
